@@ -168,7 +168,15 @@ class OcrEngine:
         '''Process PIL Image object'''
         if image.mode != 'RGBA':
             image = image.convert('RGBA')
-        
+            
+        # oneocr requires minimum 51x51
+        if image.width < 51 or image.height < 51:
+            new_width = max(image.width, 51)
+            new_height = max(image.height, 51)
+            new_img = Image.new("RGBA", (new_width, new_height), (0, 0, 0, 0))
+            new_img.paste(image, ((new_width - image.width) // 2, (new_height - image.height) // 2))
+            image = new_img
+
         # Convert to BGRA format expected by DLL
         b, g, r, a = image.split()
         bgra_image = Image.merge('RGBA', (b, g, r, a))
