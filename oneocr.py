@@ -166,17 +166,16 @@ class OcrEngine:
 
     def recognize_pil(self, image):
         '''Process PIL Image object'''
+
+        if any(x < 51 for x in image.size):
+            resize_factor = max(51 / image.width, 51 / image.height)
+            new_w = int(image.width * resize_factor)
+            new_h = int(image.height * resize_factor)
+            image = image.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
         if image.mode != 'RGBA':
             image = image.convert('RGBA')
-            
-        # oneocr requires minimum 51x51
-        if image.width < 51 or image.height < 51:
-            new_width = max(image.width, 51)
-            new_height = max(image.height, 51)
-            new_img = Image.new("RGBA", (new_width, new_height), (0, 0, 0, 0))
-            new_img.paste(image, ((new_width - image.width) // 2, (new_height - image.height) // 2))
-            image = new_img
-
+        
         # Convert to BGRA format expected by DLL
         b, g, r, a = image.split()
         bgra_image = Image.merge('RGBA', (b, g, r, a))
@@ -193,7 +192,18 @@ class OcrEngine:
         import cv2
 
         img = cv2.imdecode(image_buffer, cv2.IMREAD_UNCHANGED)
-        
+
+        h, w = img.shape[:2]
+        if w < 51 or h < 51:
+            resize_factor = max(51 / w, 51 / h)
+            new_w = int(w * resize_factor)
+            new_h = int(h * resize_factor)
+            img = cv2.resize(
+                img, 
+                (new_w, new_h), 
+                interpolation=cv2.INTER_LANCZOS4
+            )
+
         # Convert to BGRA format expected by DLL
         channels = img.shape[2] if len(img.shape) == 3 else 1
         if channels == 1:
