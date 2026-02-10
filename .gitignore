@@ -1,10 +1,5 @@
-# Git files
-.git
-.gitignore
-.gitattributes
-
 # Python
-__pycache__
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -28,10 +23,11 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual environments
+# Virtual Environment
 venv/
 ENV/
 env/
+.venv
 
 # IDE
 .vscode/
@@ -39,26 +35,22 @@ env/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-Thumbs.db
 
-# Local test files
-test*.jpg
-test*.png
-*.log
+# Environment variables
+.env
+.env.local
+.env.*.local
 
-# Documentation
-docs/
-*.md
-!README.md
-
-# OneOCR DLL files (should be mounted as volume)
+# OneOCR specific
 oneocr_files/
 *.dll
 *.onemodel
 
-# Environment files
-.env
-.env.local
+# Test files
+test*.jpg
+test*.png
+*.log
+
+# Docker
+.dockerignore

@@ -7,15 +7,23 @@ services:
       dockerfile: Dockerfile
     container_name: oneocr-server
     ports:
-      - "8001:8001"
+      - "${ONEOCR_PORT:-8001}:8001"
     volumes:
       # Mount the directory containing oneocr.dll, oneocr.onemodel, and onnxruntime.dll
-      - ./oneocr_files:/root/.config/oneocr:ro
+      - ${ONEOCR_DLL_PATH:-./oneocr_files}:/root/.config/oneocr:ro
     environment:
       - ONEOCR_WINE_MODE=1
+      - ONEOCR_LOG_LEVEL=${ONEOCR_LOG_LEVEL:-INFO}
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${ONEOCR_MEMORY_LIMIT:-2g}
+          cpus: '${ONEOCR_CPU_LIMIT:-2}'
+        reservations:
+          memory: 512m
     healthcheck:
-      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8001/')"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
