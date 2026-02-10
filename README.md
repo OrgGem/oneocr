@@ -1,6 +1,22 @@
 Originally from: https://b1tg.github.io/post/win11-oneocr/ and https://github.com/Cecilia-pj/win11_oneocr_py. Webserver code from https://github.com/GitHub30/winocr .
 Basic library which returns a dict with the text, text angle, lines, and words in each line (with text, bounding boxes and confidence values for each word) using the Snipping Tool OCR on Windows. It also includes a small web server to serve OCR requests, as inspired by WinOCR.
 
+## 📖 API Documentation
+
+**New!** See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for comprehensive API documentation including:
+- Complete API endpoint reference
+- Usage examples in multiple languages
+- Response format documentation
+- Current capabilities and limitations
+- **Important:** Table recognition status and alternatives
+
+**Mới!** Xem [API_DOCUMENTATION.md](API_DOCUMENTATION.md) để biết tài liệu API đầy đủ bao gồm:
+- Tài liệu tham khảo đầy đủ về API endpoint
+- Ví dụ sử dụng bằng nhiều ngôn ngữ
+- Tài liệu về định dạng phản hồi
+- Khả năng và giới hạn hiện tại
+- **Quan trọng:** Tình trạng nhận diện bảng và các giải pháp thay thế
+
 ## Linux Deployment / Triển khai trên Linux
 
 **Can you run OneOCR with Windows DLLs in a Linux container? YES!** 
