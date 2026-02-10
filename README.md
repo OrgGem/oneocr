@@ -17,6 +17,24 @@ Basic library which returns a dict with the text, text angle, lines, and words i
 - Khả năng và giới hạn hiện tại
 - **Quan trọng:** Tình trạng nhận diện bảng và các giải pháp thay thế
 
+## 🚀 Swagger UI (Interactive API Documentation)
+
+**NEW!** OneOCR now includes integrated Swagger/OpenAPI documentation!
+
+**MỚI!** OneOCR hiện đã tích hợp tài liệu Swagger/OpenAPI!
+
+After starting the server, access the interactive API documentation at:
+
+Sau khi khởi động server, truy cập tài liệu API tương tác tại:
+
+- **Swagger UI:** http://localhost:8001/docs
+- **ReDoc:** http://localhost:8001/redoc
+- **OpenAPI JSON:** http://localhost:8001/openapi.json
+
+See [SWAGGER_GUIDE.md](SWAGGER_GUIDE.md) for detailed instructions on using Swagger UI.
+
+Xem [SWAGGER_GUIDE.md](SWAGGER_GUIDE.md) để biết hướng dẫn chi tiết về sử dụng Swagger UI.
+
 ## Linux Deployment / Triển khai trên Linux
 
 **Can you run OneOCR with Windows DLLs in a Linux container? YES!** 

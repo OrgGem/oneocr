@@ -382,10 +382,126 @@ def serve():
     import json
     import uvicorn
     from io import BytesIO
-    from fastapi import FastAPI, Request, Response
+    from typing import Optional, List
+    from fastapi import FastAPI, Request, Response, File, UploadFile, Body
     from fastapi.middleware.cors import CORSMiddleware
+    from pydantic import BaseModel, Field
 
-    app = FastAPI()
+    # Pydantic models for API documentation
+    class BoundingRect(BaseModel):
+        """Bounding box coordinates for text region"""
+        x1: float = Field(..., description="Top-left X coordinate")
+        y1: float = Field(..., description="Top-left Y coordinate")
+        x2: float = Field(..., description="Top-right X coordinate")
+        y2: float = Field(..., description="Top-right Y coordinate")
+        x3: float = Field(..., description="Bottom-right X coordinate")
+        y3: float = Field(..., description="Bottom-right Y coordinate")
+        x4: float = Field(..., description="Bottom-left X coordinate")
+        y4: float = Field(..., description="Bottom-left Y coordinate")
+
+    class Word(BaseModel):
+        """Individual word recognition result"""
+        text: Optional[str] = Field(None, description="Recognized word text")
+        bounding_rect: Optional[BoundingRect] = Field(None, description="Word bounding box")
+        confidence: Optional[float] = Field(None, description="Recognition confidence score (0-1)")
+
+    class Line(BaseModel):
+        """Text line recognition result"""
+        text: Optional[str] = Field(None, description="Full line text")
+        bounding_rect: Optional[BoundingRect] = Field(None, description="Line bounding box")
+        words: List[Word] = Field(default_factory=list, description="Words in this line")
+
+    class OCRResult(BaseModel):
+        """OCR processing result"""
+        text: str = Field(..., description="Full extracted text from image")
+        text_angle: Optional[float] = Field(None, description="Text rotation angle in radians")
+        lines: List[Line] = Field(default_factory=list, description="Detected text lines")
+        error: Optional[str] = Field(None, description="Error message if processing failed")
+
+        class Config:
+            schema_extra = {
+                "example": {
+                    "text": "Sample text from image",
+                    "text_angle": 0.064377,
+                    "lines": [
+                        {
+                            "text": "Sample text",
+                            "bounding_rect": {
+                                "x1": 13.0, "y1": 38.0,
+                                "x2": 458.0, "y2": 38.0,
+                                "x3": 458.0, "y3": 77.0,
+                                "x4": 13.0, "y4": 76.0
+                            },
+                            "words": [
+                                {
+                                    "text": "Sample",
+                                    "bounding_rect": {
+                                        "x1": 14.35, "y1": 39.69,
+                                        "x2": 140.34, "y2": 41.31,
+                                        "x3": 139.93, "y3": 73.41,
+                                        "x4": 13.77, "y4": 74.08
+                                    },
+                                    "confidence": 0.987
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+
+    # FastAPI app with OpenAPI metadata
+    app = FastAPI(
+        title="OneOCR API",
+        description="""
+# OneOCR - Text Recognition API
+
+OneOCR cung cấp API để nhận diện văn bản từ hình ảnh sử dụng Windows 11 Snipping Tool OCR.
+
+OneOCR provides an API for text recognition from images using Windows 11 Snipping Tool OCR.
+
+## Tính năng / Features
+
+✅ **Text Recognition** - Nhận diện văn bản từ ảnh / Extract text from images  
+✅ **Multi-line Detection** - Phát hiện nhiều dòng văn bản / Detect multiple text lines  
+✅ **Word Segmentation** - Phân tách từng từ / Segment individual words  
+✅ **Bounding Boxes** - Vị trí văn bản / Text position coordinates  
+✅ **Confidence Scores** - Độ tin cậy (0-1) / Confidence scores (0-1)  
+✅ **Text Angle** - Góc xoay văn bản / Text rotation angle  
+
+❌ **Table Recognition** - KHÔNG hỗ trợ / NOT supported  
+❌ **Form Processing** - KHÔNG hỗ trợ / NOT supported  
+
+## Sử dụng / Usage
+
+Gửi dữ liệu ảnh dạng binary đến endpoint POST `/`.
+
+Send binary image data to POST `/` endpoint.
+
+## Định dạng hỗ trợ / Supported Formats
+
+- JPEG / JPG
+- PNG
+- BMP
+- Any format supported by PIL/Pillow
+
+## Giới hạn / Limitations
+
+- Kích thước ảnh: 50x50 đến 10000x10000 pixels
+- Image size: 50x50 to 10000x10000 pixels
+        """,
+        version="1.0.11",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
+        contact={
+            "name": "OneOCR Team",
+            "url": "https://github.com/OrgGem/oneocr",
+        },
+        license_info={
+            "name": "MIT License",
+            "url": "https://github.com/OrgGem/oneocr/blob/main/LICENSE",
+        },
+    )
 
     app.add_middleware(
         CORSMiddleware,
@@ -396,8 +512,136 @@ def serve():
 
     ocr_processor = OcrEngine()
 
-    @app.post('/')
+    @app.post(
+        '/',
+        response_model=OCRResult,
+        summary="Nhận diện văn bản từ ảnh / Recognize text from image",
+        description="""
+Nhận diện văn bản từ hình ảnh và trả về kết quả với thông tin chi tiết.
+
+Recognize text from an image and return detailed results.
+
+## Request / Yêu cầu
+
+Gửi dữ liệu ảnh dạng binary trong request body.  
+Send binary image data in the request body.
+
+**Content-Type:** `image/jpeg`, `image/png`, hoặc định dạng ảnh khác / or other image format
+
+## Response / Phản hồi
+
+Trả về JSON chứa:  
+Returns JSON containing:
+
+- `text`: Toàn bộ văn bản / Full extracted text
+- `text_angle`: Góc xoay văn bản (radians) / Text rotation angle (radians)
+- `lines`: Danh sách các dòng văn bản / List of text lines
+  - `text`: Nội dung dòng / Line text
+  - `bounding_rect`: Tọa độ hộp giới hạn / Bounding box coordinates
+  - `words`: Các từ trong dòng / Words in line
+    - `text`: Từ / Word
+    - `bounding_rect`: Tọa độ từ / Word coordinates
+    - `confidence`: Độ tin cậy (0-1) / Confidence score (0-1)
+
+## Example / Ví dụ
+
+### cURL
+```bash
+curl -X POST "http://localhost:8001/" \\
+  -H "Content-Type: image/jpeg" \\
+  --data-binary "@image.jpg"
+```
+
+### Python
+```python
+import requests
+
+with open('image.jpg', 'rb') as f:
+    response = requests.post('http://localhost:8001/', data=f.read())
+    result = response.json()
+    print(result['text'])
+```
+        """,
+        responses={
+            200: {
+                "description": "Nhận diện thành công / Recognition successful",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "text": "Hello World",
+                            "text_angle": 0.0,
+                            "lines": [
+                                {
+                                    "text": "Hello World",
+                                    "bounding_rect": {
+                                        "x1": 10.0, "y1": 10.0,
+                                        "x2": 100.0, "y2": 10.0,
+                                        "x3": 100.0, "y3": 30.0,
+                                        "x4": 10.0, "y4": 30.0
+                                    },
+                                    "words": [
+                                        {
+                                            "text": "Hello",
+                                            "bounding_rect": {
+                                                "x1": 10.0, "y1": 10.0,
+                                                "x2": 50.0, "y2": 10.0,
+                                                "x3": 50.0, "y3": 30.0,
+                                                "x4": 10.0, "y4": 30.0
+                                            },
+                                            "confidence": 0.99
+                                        },
+                                        {
+                                            "text": "World",
+                                            "bounding_rect": {
+                                                "x1": 55.0, "y1": 10.0,
+                                                "x2": 100.0, "y2": 10.0,
+                                                "x3": 100.0, "y3": 30.0,
+                                                "x4": 55.0, "y4": 30.0
+                                            },
+                                            "confidence": 0.98
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            400: {
+                "description": "Yêu cầu không hợp lệ / Invalid request",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "text": "",
+                            "text_angle": None,
+                            "lines": [],
+                            "error": "Unsupported image size"
+                        }
+                    }
+                }
+            },
+            500: {
+                "description": "Lỗi xử lý / Processing error",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "text": "",
+                            "text_angle": None,
+                            "lines": [],
+                            "error": "DLL initialization failed"
+                        }
+                    }
+                }
+            }
+        },
+        tags=["OCR"]
+    )
     async def process_image(request: Request):
+        """
+        Xử lý ảnh và trả về kết quả nhận diện văn bản.
+        
+        Process image and return text recognition results.
+        """
         image_data = await request.body()
         image = Image.open(BytesIO(image_data))
         result = ocr_processor.recognize_pil(image)
@@ -405,6 +649,16 @@ def serve():
             content=json.dumps(result, indent=2, ensure_ascii=False),
             media_type='application/json'
         )
+
+    @app.get(
+        '/health',
+        summary="Kiểm tra trạng thái / Health check",
+        description="Kiểm tra xem API có hoạt động không / Check if API is running",
+        tags=["Health"]
+    )
+    async def health_check():
+        """Endpoint to check API health"""
+        return {"status": "healthy", "service": "OneOCR API", "version": "1.0.11"}
 
     uvicorn.run(app, host='0.0.0.0', port=8001)
 
