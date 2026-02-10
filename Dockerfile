@@ -21,16 +21,21 @@ RUN dpkg --add-architecture i386 && \
     python3-pip \
     python3-dev \
     wget \
+    cabextract \
     ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Update winetricks to the latest version to avoid outdated checksums
+RUN wget -O /usr/local/bin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks \
+    && chmod +x /usr/local/bin/winetricks
 
 # Initialize Wine
 RUN wine64 wineboot --init && \
     wineserver -w
 
 # Install Visual C++ redistributables needed for Windows DLLs
-RUN winetricks -q vcrun2019
+RUN xvfb-run -a winetricks -q vcrun2019
 
 # Set working directory
 WORKDIR /app
@@ -45,7 +50,7 @@ COPY start.sh ./
 RUN chmod +x start.sh
 
 # Install Python dependencies
-RUN pip3 install --no-cache-dir -e .[api]
+RUN pip3 install --no-cache-dir .[api]
 
 # Create config directory for OneOCR files
 RUN mkdir -p /root/.config/oneocr
