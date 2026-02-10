@@ -1,6 +1,52 @@
 Originally from: https://b1tg.github.io/post/win11-oneocr/ and https://github.com/Cecilia-pj/win11_oneocr_py. Webserver code from https://github.com/GitHub30/winocr .
 Basic library which returns a dict with the text, text angle, lines, and words in each line (with text, bounding boxes and confidence values for each word) using the Snipping Tool OCR on Windows. It also includes a small web server to serve OCR requests, as inspired by WinOCR.
 
+## 📖 API Documentation
+
+**New!** See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for comprehensive API documentation including:
+- Complete API endpoint reference
+- Usage examples in multiple languages
+- Response format documentation
+- Current capabilities and limitations
+- **Important:** Table recognition status and alternatives
+
+**Mới!** Xem [API_DOCUMENTATION.md](API_DOCUMENTATION.md) để biết tài liệu API đầy đủ bao gồm:
+- Tài liệu tham khảo đầy đủ về API endpoint
+- Ví dụ sử dụng bằng nhiều ngôn ngữ
+- Tài liệu về định dạng phản hồi
+- Khả năng và giới hạn hiện tại
+- **Quan trọng:** Tình trạng nhận diện bảng và các giải pháp thay thế
+
+## 🚀 Swagger UI (Interactive API Documentation)
+
+**NEW!** OneOCR now includes integrated Swagger/OpenAPI documentation!
+
+**MỚI!** OneOCR hiện đã tích hợp tài liệu Swagger/OpenAPI!
+
+After starting the server, access the interactive API documentation at:
+
+Sau khi khởi động server, truy cập tài liệu API tương tác tại:
+
+- **Swagger UI:** http://localhost:8001/docs
+- **ReDoc:** http://localhost:8001/redoc
+- **OpenAPI JSON:** http://localhost:8001/openapi.json
+
+See [SWAGGER_GUIDE.md](SWAGGER_GUIDE.md) for detailed instructions on using Swagger UI.
+
+Xem [SWAGGER_GUIDE.md](SWAGGER_GUIDE.md) để biết hướng dẫn chi tiết về sử dụng Swagger UI.
+
+## Linux Deployment / Triển khai trên Linux
+
+**Can you run OneOCR with Windows DLLs in a Linux container? YES!** 
+
+See [LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md) for detailed instructions on deploying OneOCR in Linux containers using Docker and Wine.
+
+**Có thể chạy OneOCR với DLL Windows trong Linux container không? CÓ!**
+
+Xem [LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md) để biết hướng dẫn chi tiết về cách triển khai OneOCR trong Linux container sử dụng Docker và Wine.
+
+## Windows Installation
+
 To use you need to place 3 files from recent Windows 11 versions of Snipping Tool. The easiest way to get them is through https://store.rg-adguard.net, insert "https://apps.microsoft.com/detail/9mz95kl8mr0l" in the search box and download the most recent "Microsoft.ScreenSketch" "msixbundle" file. Then rename it to .zip and extract it. Extract the "SnippingToolApp" "msix" file for your architecture (x64 or ARM64) again after also renaming it to .zip, and the files should be in the "SnippingTool" folder.
 
 - oneocr.dll
