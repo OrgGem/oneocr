@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  oneocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oneocr-server
+    ports:
+      - "8001:8001"
+    volumes:
+      # Mount the directory containing oneocr.dll, oneocr.onemodel, and onnxruntime.dll
+      - ./oneocr_files:/root/.config/oneocr:ro
+    environment:
+      - ONEOCR_WINE_MODE=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8001/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

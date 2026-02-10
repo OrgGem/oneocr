@@ -1,6 +1,18 @@
 Originally from: https://b1tg.github.io/post/win11-oneocr/ and https://github.com/Cecilia-pj/win11_oneocr_py. Webserver code from https://github.com/GitHub30/winocr .
 Basic library which returns a dict with the text, text angle, lines, and words in each line (with text, bounding boxes and confidence values for each word) using the Snipping Tool OCR on Windows. It also includes a small web server to serve OCR requests, as inspired by WinOCR.
 
+## Linux Deployment / Triển khai trên Linux
+
+**Can you run OneOCR with Windows DLLs in a Linux container? YES!** 
+
+See [LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md) for detailed instructions on deploying OneOCR in Linux containers using Docker and Wine.
+
+**Có thể chạy OneOCR với DLL Windows trong Linux container không? CÓ!**
+
+Xem [LINUX_DEPLOYMENT.md](LINUX_DEPLOYMENT.md) để biết hướng dẫn chi tiết về cách triển khai OneOCR trong Linux container sử dụng Docker và Wine.
+
+## Windows Installation
+
 To use you need to place 3 files from recent Windows 11 versions of Snipping Tool. The easiest way to get them is through https://store.rg-adguard.net, insert "https://apps.microsoft.com/detail/9mz95kl8mr0l" in the search box and download the most recent "Microsoft.ScreenSketch" "msixbundle" file. Then rename it to .zip and extract it. Extract the "SnippingToolApp" "msix" file for your architecture (x64 or ARM64) again after also renaming it to .zip, and the files should be in the "SnippingTool" folder.
 
 - oneocr.dll

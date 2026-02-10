@@ -113,17 +113,41 @@ class OcrEngine:
 
     def _load_dll(self):
         self.ocr_dll = None
+        is_wine = os.environ.get('ONEOCR_WINE_MODE') == '1' or 'WINEPREFIX' in os.environ
+        
         try:
+            # Load kernel32 for DLL directory configuration
             kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
             if hasattr(kernel32, 'SetDllDirectoryW'):
-                kernel32.SetDllDirectoryW(CONFIG_DIR)
+                # In Wine, we need to ensure the path is accessible
+                if is_wine:
+                    # Wine can handle Linux paths directly in most cases
+                    kernel32.SetDllDirectoryW(CONFIG_DIR)
+                else:
+                    kernel32.SetDllDirectoryW(CONFIG_DIR)
 
             dll_path = os.path.join(CONFIG_DIR, DLL_NAME)
+            
+            # Verify DLL file exists before attempting to load
+            if not os.path.exists(dll_path):
+                raise RuntimeError(
+                    f'DLL file not found at {dll_path}. '
+                    f'Please ensure oneocr.dll, oneocr.onemodel, and onnxruntime.dll '
+                    f'are placed in {CONFIG_DIR}'
+                )
+            
             ocr_dll = ctypes.WinDLL(dll_path)
             self._bind_dll_functions(ocr_dll, DLL_FUNCTIONS)
             self.ocr_dll = ocr_dll
         except (OSError, RuntimeError) as e:
-            raise RuntimeError(f'DLL initialization failed: {e}') from e
+            if is_wine:
+                raise RuntimeError(
+                    f'DLL initialization failed in Wine environment: {e}\n'
+                    f'Make sure Wine is properly configured and Visual C++ Runtime is installed.\n'
+                    f'You may need to run: winetricks vcrun2019'
+                ) from e
+            else:
+                raise RuntimeError(f'DLL initialization failed: {e}') from e
 
     def _create_init_options(self):
         init_options = c_int64()
