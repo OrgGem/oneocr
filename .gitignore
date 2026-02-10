@@ -51,6 +51,3 @@ oneocr_files/
 test*.jpg
 test*.png
 *.log
-
-# Docker
-.dockerignore

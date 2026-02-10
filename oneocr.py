@@ -119,12 +119,7 @@ class OcrEngine:
             # Load kernel32 for DLL directory configuration
             kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
             if hasattr(kernel32, 'SetDllDirectoryW'):
-                # In Wine, we need to ensure the path is accessible
-                if is_wine:
-                    # Wine can handle Linux paths directly in most cases
-                    kernel32.SetDllDirectoryW(CONFIG_DIR)
-                else:
-                    kernel32.SetDllDirectoryW(CONFIG_DIR)
+                kernel32.SetDllDirectoryW(CONFIG_DIR)
 
             dll_path = os.path.join(CONFIG_DIR, DLL_NAME)
             
