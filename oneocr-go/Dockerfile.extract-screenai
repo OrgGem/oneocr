@@ -1,0 +1,84 @@
+# Helper Dockerfile to extract libchromescreenai.so from Chrome
+# Run once, then use the extracted .so in the main Dockerfile
+#
+# Usage:
+#   docker build -f Dockerfile.extract-screenai -t screenai-extract .
+#   docker run --rm -v $(pwd)/chrome-ocr/140.21:/output screenai-extract
+#
+# This will place libchromescreenai.so at chrome-ocr/140.21/libchromescreenai.so
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    gnupg2 \
+    wget \
+    xvfb \
+    procps \
+    && curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub \
+       | gpg --dearmor -o /etc/apt/trusted.gpg.d/google-chrome.gpg \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+       > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY <<'EOF' /extract.sh
+#!/bin/bash
+set -e
+
+PROFILE_DIR="/tmp/chrome-profile"
+OUTPUT_DIR="/output"
+
+mkdir -p "$PROFILE_DIR"
+
+# Pre-seed Chrome preferences to trigger Screen AI
+echo '{"accessibility":{"screen_ai_enabled":true},"browser":{"enabled_labs_experiments":["pdf-ocr@1","read-anything-with-screen2x@1"]}}' \
+    > "$PROFILE_DIR/Local State"
+
+echo "=== Starting Chrome to trigger Screen AI component download ==="
+echo "This may take 2-5 minutes..."
+
+# Run Chrome with xvfb (virtual display) in background
+xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
+    google-chrome \
+    --no-sandbox \
+    --disable-gpu \
+    --user-data-dir="$PROFILE_DIR" \
+    --enable-features=ScreenAIServiceEnabled,PdfOcr,ScreenAIOCREnabled,ReadAnythingWithScreen2x \
+    --force-component-updater \
+    "about:blank" &
+
+CHROME_PID=$!
+
+# Poll for the .so file
+for i in $(seq 1 60); do
+    sleep 5
+    SO_FILE=$(find "$PROFILE_DIR" -name "libchromescreenai.so" -type f 2>/dev/null | head -1)
+    if [ -n "$SO_FILE" ]; then
+        echo "=== FOUND after $((i*5))s: $SO_FILE ==="
+        ls -lh "$SO_FILE"
+        cp "$SO_FILE" "$OUTPUT_DIR/libchromescreenai.so"
+        chmod 755 "$OUTPUT_DIR/libchromescreenai.so"
+        echo "=== Saved to $OUTPUT_DIR/libchromescreenai.so ==="
+        kill $CHROME_PID 2>/dev/null || true
+        echo "=== SUCCESS ==="
+        exit 0
+    fi
+    echo "[$((i*5))s] Waiting for component download... (checking $PROFILE_DIR)"
+    find "$PROFILE_DIR" -name "screen_ai*" -type d 2>/dev/null || true
+done
+
+echo "=== FAILED: Screen AI component was not downloaded after 300s ==="
+echo "Possible causes:"
+echo "  - Network issues"
+echo "  - Chrome version doesn't support Screen AI"
+echo "  - Component updater blocked"
+kill $CHROME_PID 2>/dev/null || true
+exit 1
+EOF
+
+RUN chmod +x /extract.sh
+
+ENTRYPOINT ["/extract.sh"]

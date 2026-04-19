@@ -1,0 +1,32 @@
+# OneOCR Go Engine — Docker Compose (standalone, no VietCorrect)
+
+services:
+  oneocr:
+    build:
+      context: ..
+      dockerfile: oneocr-go/Dockerfile
+    image: oneocr-go:latest
+    container_name: oneocr
+    ports:
+      - "${ONEOCR_PORT:-8002}:8001"
+    environment:
+      - ONEOCR_WORKERS=${ONEOCR_WORKERS:-4}
+      - ONEOCR_MAX_LINES=${ONEOCR_MAX_LINES:-100}
+      - ONEOCR_SUB_PATH=${ONEOCR_SUB_PATH:-/ocr-service}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8001$${ONEOCR_SUB_PATH}/api/v1/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G

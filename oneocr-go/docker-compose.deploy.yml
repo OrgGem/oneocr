@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  oneocr:
+    build:
+      context: ..
+      dockerfile: oneocr-go/Dockerfile
+    image: oneocr-go:latest
+    container_name: oneocr_backend
+    environment:
+      # Cấu hình OneOCR hoạt động dưới lớp sub-path
+      - ONEOCR_SUB_PATH=/ocr-service
+      - ONEOCR_WORKERS=4
+    restart: unless-stopped
+    healthcheck:
+      # Healhcheck cũng phải được cập nhật tương ứng với sub-path
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8001$${ONEOCR_SUB_PATH}/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Proxy Server dùng để hứng port public và chỉ định routing
+  nginx:
+    image: nginx:alpine
+    container_name: oneocr_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - oneocr
+    restart: always
